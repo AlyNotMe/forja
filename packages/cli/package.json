@@ -1,0 +1,42 @@
+{
+  "name": "@forja/cli",
+  "version": "0.0.0",
+  "description": "Forja scaffolding CLI — forja new / forja add / forja make:engine.",
+  "license": "MIT",
+  "type": "commonjs",
+  "bin": {
+    "forja": "./bin/run.js"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "templates"
+  ],
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "oclif": {
+    "bin": "forja",
+    "dirname": "forja",
+    "commands": "./dist/commands",
+    "topicSeparator": " ",
+    "topics": {
+      "make": {
+        "description": "Generate a new engine (feature) in an existing Forja project."
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@oclif/core": "^4",
+    "@oclif/plugin-help": "^6"
+  },
+  "devDependencies": {
+    "@types/node": "*"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
