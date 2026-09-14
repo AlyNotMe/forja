@@ -1,4 +1,20 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { Command, Args } from "@oclif/core";
+import prompts from "prompts";
+import { copyLayer, mergeFragment } from "../scaffold";
+
+const TEMPLATES_DIR = path.join(__dirname, "..", "..", "templates");
+
+const RENDER_CHOICES = [
+  { title: "Server views — EJS", value: "ejs" },
+  { title: "Server views — Pug", value: "pug" },
+  { title: "Server views — Handlebars", value: "handlebars" },
+  { title: "Frontend SPA — React", value: "react" },
+  { title: "Frontend SPA — Vue", value: "vue" },
+  { title: "Frontend SPA — Svelte", value: "svelte" },
+  { title: "None (API only)", value: "none" },
+];
 
 export default class NewCommand extends Command {
   static description = "Scaffold a new Forja project (asks stack questions).";
@@ -9,9 +25,80 @@ export default class NewCommand extends Command {
 
   async run(): Promise<void> {
     const { args } = await this.parse(NewCommand);
-    this.warn(
-      `"forja new ${args.name}" is not implemented yet — stack prompts (language, ` +
-        "view engine, frontend, styling, tests, addons) are still to be built."
+    const targetDir = path.join(process.cwd(), args.name);
+
+    if (fs.existsSync(targetDir)) {
+      this.error(`"${targetDir}" already exists.`);
+    }
+
+    const answers = await prompts(
+      [
+        {
+          type: "select",
+          name: "lang",
+          message: "Language",
+          choices: [
+            { title: "TypeScript", value: "ts" },
+            { title: "JavaScript", value: "js" },
+          ],
+        },
+        {
+          type: "select",
+          name: "render",
+          message: "How should pages be served? (SSR and a SPA frontend are mutually exclusive)",
+          choices: RENDER_CHOICES,
+        },
+        {
+          type: "select",
+          name: "css",
+          message: "Styling",
+          choices: [
+            { title: "SCSS", value: "scss" },
+            { title: "Tailwind CSS", value: "tailwind" },
+            { title: "None", value: "none" },
+          ],
+        },
+        {
+          type: "select",
+          name: "tests",
+          message: "Test runner",
+          choices: [
+            { title: "Vitest", value: "vitest" },
+            { title: "Jest", value: "jest" },
+            { title: "None", value: "none" },
+          ],
+        },
+      ],
+      {
+        onCancel: () => {
+          this.error("Aborted.");
+        },
+      }
     );
+
+    fs.mkdirSync(targetDir, { recursive: true });
+
+    const layers = [
+      path.join(TEMPLATES_DIR, "base"),
+      path.join(TEMPLATES_DIR, "lang", answers.lang),
+      path.join(TEMPLATES_DIR, "render", answers.render),
+      path.join(TEMPLATES_DIR, "css", answers.css),
+      path.join(TEMPLATES_DIR, "tests", answers.tests),
+    ];
+
+    let pkg: Record<string, unknown> = { name: args.name };
+
+    for (const layer of layers) {
+      copyLayer(layer, targetDir);
+      pkg = mergeFragment(pkg, layer);
+    }
+
+    fs.writeFileSync(path.join(targetDir, "package.json"), JSON.stringify(pkg, null, 2) + "\n");
+
+    this.log(`\nForja project created at ${targetDir}`);
+    this.log(`  language: ${answers.lang}`);
+    this.log(`  render:   ${answers.render}`);
+    this.log(`  css:      ${answers.css}`);
+    this.log(`  tests:    ${answers.tests}`);
   }
 }
