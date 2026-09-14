@@ -1,0 +1,14 @@
+{
+  "main": "dist/index.js",
+  "scripts": {
+    "start": "node dist/index.js",
+    "build": "tsc",
+    "dev": "ts-node index.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5",
+    "ts-node": "^10",
+    "@types/node": "^20",
+    "@types/express": "^4"
+  }
+}

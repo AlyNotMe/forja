@@ -1,0 +1,7 @@
+{
+  "devDependencies": {
+    "tailwindcss": "^3",
+    "postcss": "^8",
+    "autoprefixer": "^10"
+  }
+}

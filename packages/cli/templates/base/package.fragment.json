@@ -1,0 +1,11 @@
+{
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {},
+  "dependencies": {
+    "@forja/core": "*",
+    "express": "^4",
+    "dotenv": "^16"
+  },
+  "devDependencies": {}
+}

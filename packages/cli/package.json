@@ -31,10 +31,17 @@
   },
   "dependencies": {
     "@oclif/core": "^4",
-    "@oclif/plugin-help": "^6"
+    "@oclif/plugin-help": "^6",
+    "@forja/addon-auth": "*",
+    "@forja/addon-validator": "*",
+    "@forja/orm": "*",
+    "@forja/addon-realtime": "*",
+    "@forja/addon-i18n": "*",
+    "prompts": "^2"
   },
   "devDependencies": {
-    "@types/node": "*"
+    "@types/node": "*",
+    "@types/prompts": "^2"
   },
   "engines": {
     "node": ">=18"

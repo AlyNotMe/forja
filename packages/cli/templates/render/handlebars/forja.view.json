@@ -1,0 +1,7 @@
+{
+  "engine": "handlebars",
+  "isAlreadyImplement": false,
+  "module": "express-handlebars",
+  "export": "engine",
+  "options": { "defaultLayout": false }
+}
