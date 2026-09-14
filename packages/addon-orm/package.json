@@ -1,0 +1,15 @@
+{
+  "name": "@forja/orm",
+  "version": "0.0.0",
+  "description": "Forja in-house multi-DB ORM (JSON, SQL, MySQL...).",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist"
+  },
+  "peerDependencies": {
+    "@forja/core": "*"
+  }
+}
