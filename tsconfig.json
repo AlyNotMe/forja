@@ -1,0 +1,12 @@
+{
+  "files": [],
+  "references": [
+    { "path": "packages/core" },
+    { "path": "packages/addon-validator" },
+    { "path": "packages/addon-auth" },
+    { "path": "packages/addon-orm" },
+    { "path": "packages/addon-realtime" },
+    { "path": "packages/addon-i18n" },
+    { "path": "packages/cli" }
+  ]
+}
