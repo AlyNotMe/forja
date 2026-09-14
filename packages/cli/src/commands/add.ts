@@ -1,6 +1,21 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { Command, Args } from "@oclif/core";
+import { copyLayer } from "../scaffold";
 
 const OFFICIAL_PRESETS = ["auth", "orm", "realtime", "i18n"] as const;
+type Preset = (typeof OFFICIAL_PRESETS)[number];
+
+const PACKAGE_NAME: Record<Preset, string> = {
+  auth: "@forja/addon-auth",
+  orm: "@forja/orm",
+  realtime: "@forja/addon-realtime",
+  i18n: "@forja/addon-i18n",
+};
+
+interface JsonObject {
+  [key: string]: unknown;
+}
 
 export default class AddCommand extends Command {
   static description = "Plug an official Forja addon/preset into the current project.";
@@ -15,9 +30,57 @@ export default class AddCommand extends Command {
 
   async run(): Promise<void> {
     const { args } = await this.parse(AddCommand);
-    this.warn(
-      `"forja add ${args.preset}" is not implemented yet — installing @forja/` +
-        `addon-${args.preset} and copying its templates into features/ is still to be built.`
-    );
+    const preset = args.preset as Preset;
+    const packageName = PACKAGE_NAME[preset];
+
+    const cwd = process.cwd();
+    const targetPackageJsonPath = path.join(cwd, "package.json");
+    if (!fs.existsSync(targetPackageJsonPath)) {
+      this.error(`No package.json found in "${cwd}" — run this inside a Forja project.`);
+    }
+
+    // Locate the addon package on disk (installed dependency of @forja/cli).
+    let addonPackageJsonPath: string;
+    try {
+      addonPackageJsonPath = require.resolve(`${packageName}/package.json`);
+    } catch {
+      this.error(`Could not resolve "${packageName}". Is it installed alongside @forja/cli?`);
+    }
+    const addonDir = path.dirname(addonPackageJsonPath);
+    const templatesDir = path.join(addonDir, "templates");
+
+    if (!fs.existsSync(templatesDir)) {
+      this.warn(
+        `"forja add ${preset}" has no templates yet — ${packageName} is still an empty ` +
+          "package under construction."
+      );
+      return;
+    }
+
+    const targetFeatureDir = path.join(cwd, "features", preset);
+    if (fs.existsSync(targetFeatureDir)) {
+      this.error(`"${targetFeatureDir}" already exists.`);
+    }
+
+    fs.mkdirSync(targetFeatureDir, { recursive: true });
+    copyLayer(templatesDir, targetFeatureDir);
+
+    const addonPackageJson = JSON.parse(fs.readFileSync(addonPackageJsonPath, "utf8")) as JsonObject;
+    const peerDependencies = (addonPackageJson.peerDependencies as JsonObject) ?? {};
+
+    const targetPackageJson = JSON.parse(fs.readFileSync(targetPackageJsonPath, "utf8")) as JsonObject;
+    const dependencies = (targetPackageJson.dependencies as JsonObject) ?? {};
+
+    dependencies[packageName] = "*";
+    for (const dep of Object.keys(peerDependencies)) {
+      if (!(dep in dependencies)) dependencies[dep] = "*";
+    }
+
+    targetPackageJson.dependencies = dependencies;
+    fs.writeFileSync(targetPackageJsonPath, JSON.stringify(targetPackageJson, null, 2) + "\n");
+
+    this.log(`Added "${preset}" to features/${preset}/`);
+    this.log(`Updated dependencies: ${[packageName, ...Object.keys(peerDependencies)].join(", ")}`);
+    this.log("Run your package manager's install command to fetch them.");
   }
 }
