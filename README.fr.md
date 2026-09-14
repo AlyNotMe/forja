@@ -30,13 +30,35 @@ organique.
 ### Registry-driven (auto-discovery)
 
 Le noyau ne maintient pas de fichier de routes centralisé à la main. Il scanne des
-dossiers conventionnels au démarrage et enregistre automatiquement ce qu'il y trouve :
+dossiers conventionnels au démarrage et enregistre automatiquement ce qu'il y
+trouve — implémenté dans le module `registry/` de `@forja/core` :
 
-- `routeRegistry` détecte les fichiers de route et les enregistre via `routerHandler`.
-- `middlewareRegistry` détecte les middlewares et les enregistre via `middlewareHandler`.
+- **`RouteRegistry`** scanne récursivement `features/**/*.route.js`, require chaque
+  fichier, et monte ce qu'il exporte (un Router Express) sur l'app. Déposer un
+  fichier `<feature>.route.js` sous `features/` suffit — rien à enregistrer à la
+  main.
+- **`MiddlewareRegistry`** scanne un dossier séparé (`shared/middlewares/` par
+  convention) pour les middlewares **globaux** uniquement — ce qui doit tourner sur
+  chaque requête (un logger, l'attache de config...). Les fichiers se chargent par
+  ordre alphabétique. Les middlewares de feature (un guard d'auth, par exemple) ne
+  sont volontairement **pas** auto-montés ici : ils s'appliqueraient à 100% des
+  requêtes, ce qui n'est presque jamais ce qu'un guard doit faire. Ils restent un
+  simple `require()` dans le fichier de route qui en a besoin — voir
+  `auth.route.js` dans `@forja/addon-auth`. Un middleware réutilisé par plusieurs
+  features reste un simple import, qu'il vive dans son dossier de feature d'origine
+  ou soit remonté dans `shared/middlewares/` pour plus de clarté — la promotion vers
+  le registry ne concerne que les middlewares qui appartiennent vraiment à chaque
+  requête.
+- **`wrapAsync`** — Express 4 ne transmet pas automatiquement une promesse rejetée
+  d'un handler async à `next()` ; ça enveloppe un handler pour que ce soit le cas.
 
-Ajouter une route ou un middleware consiste à déposer un fichier au bon endroit — le
-noyau se charge du reste. Pas de boilerplate de câblage manuel.
+C'est une généralisation directe du pattern `routeRegistry`/`middlewareRegistry`
+trouvé dans le projet NeoChess-Legacy dont ce framework est issu — avec une vraie
+correction faite en chemin : le vrai registry de NeoChess impose de lister chaque
+route à la main dans un fichier central (une API d'enregistrement explicite, pas du
+vrai auto-discovery). Les registries de Forja scannent réellement le système de
+fichiers, conforme à ce que ce document a toujours décrit comme le comportement
+visé.
 
 ### Feature-based (rangement par domaine, pas par type technique)
 
@@ -115,7 +137,22 @@ Le CLI (`forja new`) interroge l'utilisateur sur chaque axe indépendamment :
 
 Le mode "full-stack couplé" façon Next.js n'est volontairement pas proposé : Forja
 reste toujours découplé entre noyau serveur et frontend, quel que soit le frontend
-choisi.
+choisi. Les vues serveur et un frontend SPA sont deux philosophies de rendu
+différentes (le serveur construit le HTML vs. le navigateur construit le DOM) et
+sont mutuellement exclusives — une seule question "comment servir les pages ?"
+choisit entre SSR, CSR ou API only, donc une combinaison invalide (ex : Pug + React)
+ne peut pas se produire.
+
+### Comment le scaffolding évite l'explosion combinatoire de templates
+
+`forja new` n'embarque pas un template complet par combinaison de stack. Il n'y a
+qu'un template `base`, plus un petit ensemble de **couches** indépendantes et
+composables — une par axe (`lang`, `render`, `css`, `tests`) — copiées les unes
+par-dessus les autres et fusionnées. Chaque couche n'ajoute que ses propres fichiers
+et un `package.fragment.json` avec ses propres dépendances/scripts, fusionné dans le
+`package.json` final. Le nombre de templates à maintenir croît de façon additive
+(base + options par axe), jamais multiplicative selon les combinaisons. Voir
+`packages/cli/templates/` et `packages/cli/src/scaffold.ts`.
 
 ## Addons officiels
 
@@ -161,21 +198,93 @@ Commandes prévues :
   - `<name>.test.js` — fichier de test vide (Vitest ou Jest, selon le choix fait à
     l'installation)
 
-  Les presets officiels (`forja add engine auth`, etc.) reprennent la même
+  Les presets officiels (`forja add auth`, etc.) reprennent la même
   arborescence mais avec une logique déjà écrite (ex : `auth` câble déjà le hashing
   de mot de passe, les routes login/register et un guard de route) au lieu de
-  fichiers vides.
+  fichiers vides. `forja add <preset>` copie le `templates/` de l'addon dans
+  `features/<preset>/` et fusionne les dépendances de l'addon (et ses peer
+  dependencies) dans le `package.json` du projet — implémenté et fonctionnel
+  aujourd'hui pour `auth` ; `orm`/`realtime`/`i18n` avertissent qu'ils ne sont pas
+  encore prêts puisque ces packages n'ont pas de `templates/` propre.
+
+### Configuration (`config.js` + `.env`)
+
+Chaque projet généré reçoit un `config.js`/`config.ts` à sa racine plus `.env` et
+`.env.example` — une généralisation directe du `config.js` de NeoChess-Legacy
+(basé sur l'env, fail-fast sur les valeurs requises manquantes via
+`createConfig` de `@forja/core`) mais **sans forme fixe** : les champs par défaut
+sont `env` (`NODE_ENV`), `name` (`APP_NAME`), `host` (`HOST`) et `port` (`PORT`),
+et le projet possède ce fichier — ajoute ce dont ton projet a besoin (secret de
+session, URL de DB...) sans que Forja n'impose quoi que ce soit au-delà de ces
+bases de déploiement. `index.js` lit `config.port`/`config.host` pour lier le
+serveur, donc modifier `.env` est toute l'histoire du setup de déploiement : aucun
+changement de code nécessaire pour pointer vers un autre port ou une autre adresse
+de bind (`HOST=0.0.0.0` pour un conteneur, par exemple).
+
+### Comment un moteur de vue serveur est réellement câblé
+
+Choisir EJS/Pug/Handlebars dans `forja new` fait plus que déposer des fichiers de
+vue : chacune de ces couches de rendu ajoute aussi un `forja.view.json` à la racine
+du projet (`{ engine, isAlreadyImplement, module?, export?, options? }`), et
+`core/app.js` a un seul bloc de logique générique — utilisé pour chaque moteur SSR,
+jamais dupliqué par combinaison — qui le lit et configure Express en conséquence.
+Ça reprend exactement le flag `isAlreadyImplement` de `config.js`/`configuration.js`
+dans NeoChess-Legacy : EJS et Pug sont compris nativement par Express une fois
+nommés via `app.set("view engine", ...)` ; Handlebars a besoin que la factory de son
+module soit enregistrée explicitement via `app.engine(...)` au préalable. En
+l'absence de `forja.view.json` (API only ou frontend SPA), tout ce bloc est
+sauté. Tous les chemins (`features/`, `shared/`, `views/`) sont résolus depuis
+`process.cwd()`, pas `__dirname` — nécessaire pour un projet TS, où `__dirname`
+pointe dans `dist/` une fois compilé, alors que ces dossiers ne sont jamais
+compilés, ils n'existent qu'à la racine du projet.
 
 ## État du projet
 
-Le nom **Forja** est retenu et réservé (npm + GitHub). Le projet en est à la phase de
-définition d'architecture — le code du noyau n'est pas encore extrait de
-NeoChess-Legacy, et le CLI n'est pas encore initialisé.
+Le nom **Forja** est retenu et réservé (npm + GitHub). Fonctionnel et testé de bout
+en bout aujourd'hui :
+
+- `@forja/core` : contrats, auto-discovery `RouteRegistry`/`MiddlewareRegistry`,
+  `createConfig`, `wrapAsync`.
+- `forja new` : compose un projet réellement lançable pour n'importe quelle
+  combinaison langage × rendu × css × tests. Vérifié par des exécutions réelles,
+  pas juste une inspection de fichiers : chaque option de rendu en JS et en TS
+  (EJS/Pug/Handlebars rendent vraiment du HTML via un vrai serveur Express ;
+  React/Vue/Svelte se build vraiment via Vite dans leur `client/` découplé ;
+  API-only sert du vrai JSON), build `tsc` compilé et mode dev `ts-node` pour TS
+  (aucun bug de chemin `__dirname` vs `dist/`), SCSS compile réellement, et Vitest
+  comme Jest exécutent et passent réellement un vrai fichier de test avec la même
+  syntaxe globale `describe`/`it`/`expect` (le `globals: true` de Vitest est
+  volontaire pour matcher l'ergonomie de Jest, puisque `forja make:engine` génère
+  des fichiers de test sans imports).
+- Un projet fraîchement généré répond sur `/` dès le départ — chaque option de
+  rendu fournit sa propre route d'accueil `features/home/home.route.js` (JSON pour
+  API-only, une page complète aux couleurs officielles Forja pour SSR/CSR) — rien
+  ne renvoie 404 avant d'avoir écrit la moindre ligne de code. Le nom d'app affiché
+  est lu en direct depuis `config.name` (`APP_NAME` dans `.env`, ou
+  `VITE_APP_NAME` côté client pour le CSR). La welcome page démontre aussi un
+  changement de langue FR/EN minimal : en SSR, `/`, `/fr` et `/en` sont de vraies
+  routes (même convention d'URL que le `/:language?/login` de NeoChess-Legacy, `/`
+  détectant automatiquement via `Accept-Language`), et le CSR utilise
+  `navigator.language` côté client — autonome, pas branché sur
+  `@forja/addon-i18n` puisque ce package est encore vide ; une fois qu'il existera,
+  les vraies features devront l'utiliser à la place. Chaque copie de cette démo
+  porte un commentaire qui explique précisément quoi supprimer et remplacer une
+  fois l'addon disponible. Aucun outil de nettoyage nécessaire : c'est du code
+  généré que tu possèdes, libre à toi de l'éditer ou de le supprimer comme
+  n'importe quel autre fichier — pareil que le `App.jsx` placeholder d'un starter
+  Vite.
+- `forja make:engine <name>` : génère les fichiers route/engine/lang/middleware/test
+  d'une feature.
+- `forja add auth` : copie les templates de `@forja/addon-auth` dans
+  `features/auth/` et fusionne ses dépendances dans le `package.json` du projet.
+- `@forja/addon-auth` et `@forja/addon-validator` : entièrement fonctionnels, basés
+  DIP (l'engine ne connaît que les contrats `Hasher`/`Repository`, jamais bcrypt ni
+  une base de données).
 
 ### Prochaines étapes
 
-- [ ] Initialiser le CLI oclif (`forja new`, `forja add`)
-- [ ] Extraire le noyau (registries + handlers) de NeoChess-Legacy vers un package
-      réutilisable
-- [ ] Définir la structure de l'ORM maison multi-DB
-- [ ] Définir la structure de l'addon Sécurité (Auth + JWT)
+- [ ] `forja add orm` / `realtime` / `i18n` — ces packages d'addon sont encore
+      vides, `forja add` avertit déjà au lieu de faire semblant de fonctionner.
+- [ ] Concevoir et construire l'ORM maison multi-DB.
+- [ ] Élargir l'addon Sécurité au-delà de l'auth (rôles/permissions,
+      rate-limiting, CSRF).
