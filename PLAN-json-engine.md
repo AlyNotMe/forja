@@ -1,4 +1,30 @@
-# `@forja/json-engine` — a real, page-based B+tree JSON storage engine
+# `@forja/json-driver` — a real, page-based B+tree JSON storage engine
+
+## Addon philosophy: drivers are swappable, everything works standalone
+
+Forja's core rule ("libre par défaut, équipé par choix") applies recursively: not
+just Forja itself, but every addon, must be usable on its own — outside Forja,
+and outside the other addons it's designed to pair with.
+
+`@forja/orm` (existing empty scaffold at `packages/addon-orm/`) is **DB-agnostic**.
+It only knows a small storage-driver contract (see `Repository<T>` /
+`JsonEngineOptions`-shaped API below) — never a concrete storage implementation.
+`@forja/json-driver` is the **first official driver**: a real page-based B+tree
+engine, but it's just one interchangeable implementation. A future
+`@forja/mysql-driver` or `@forja/postgres-driver` would plug into `@forja/orm`
+the exact same way. This mirrors the `Hasher` contract / `auth.password.js`
+pattern already used by `addon-auth`: the engine (`auth.engine.js`, or here
+`@forja/orm`) depends only on a contract, never on bcrypt or a specific driver.
+
+Concretely, this means three valid, independent ways to use this work once it
+ships:
+1. **`@forja/json-driver` alone** — any Node project can `openDatabase()`
+   directly, with zero `@forja/orm` and zero Forja dependency at all.
+2. **`@forja/orm` + `@forja/json-driver`** — the common Forja case, wired via
+   `forja add orm` (or `forja add json-driver`, or both).
+3. **`@forja/orm` + a different driver** (e.g. a future MySQL driver) — same
+   `Repository<T>` contract, different backing store, `@forja/orm`'s own code
+   never changes.
 
 ## Context
 
@@ -33,7 +59,7 @@ async, out of scope for the core deliverable).
 
 | Decision | Choice | Why |
 |---|---|---|
-| Package split | New standalone package **`packages/json-engine`** (`@forja/json-engine`), library-shaped (compiled TS, real `dist/`) | Contains real machinery (Pager, B+tree, overflow) that must not be copy-pasted per-project like `addon-auth`'s templates are; zero Forja dependency so it's usable outside Forja entirely. |
+| Package split | New standalone package **`packages/addon-json-driver`** (`@forja/json-driver`), library-shaped (compiled TS, real `dist/`) | Contains real machinery (Pager, B+tree, overflow) that must not be copy-pasted per-project like `addon-auth`'s templates are; zero Forja dependency so it's usable outside Forja entirely. |
 | Page size | **4096 bytes** | Matches common OS/filesystem block size; SQLite's modern default for the same problem. |
 | fs API | **`fs.promises`**, page-granular reads/writes at explicit offsets — never whole-file reads | This runs inside Express request handlers; sync I/O would stall the event loop for every concurrent request. |
 | Tree shape | **B+tree** (data only in leaves, leaves linked via right-sibling pointer) | Leaf-chain scan is O(leaf pages), not a recursive walk — matches the `scan()`/`findOne` requirement. |
@@ -42,8 +68,8 @@ async, out of scope for the core deliverable).
 | Secondary indexes | **Deferred** — `findOne`/scan does a full leaf-chain traversal + in-memory predicate filter | Honest and simple; fine for Forja's realistic small/medium-project audience. Clean extension point later (a second per-field B+tree). |
 | Concurrency | Single in-process **async mutex** serializing every public `JsonDatabase` call (reads included) | No WAL/MVCC, so concurrent read+write against the same pages is unsafe. Multi-process locking is explicitly out of scope. |
 | Durability | `flush()` (write dirty pages + fsync) after each top-level operation and on `close()` — **not** per individual page write | Best-effort, not crash-atomic. True crash-safety needs a WAL — explicitly out of scope for v1, documented as a known limitation. |
-| Test runner | **Vitest**, devDependency scoped to `packages/json-engine/package.json` only | Zero-config TS/ESM support matching the repo's `Node16`/ES2022 tsconfig; no existing test precedent elsewhere in the monorepo's own packages to conform to or conflict with. There's no CI in this repo, so verification means running these tests locally. |
-| `@forja/orm` → `@forja/json-engine` dependency type | Normal `dependencies`, not `peerDependencies` | Matches the repo convention: `peerDependencies` are for what copied *template* code directly `require()`s in a consumer project. `@forja/json-engine` is only used internally by `@forja/orm`'s own compiled code. |
+| Test runner | **Vitest**, devDependency scoped to `packages/addon-json-driver/package.json` only | Zero-config TS/ESM support matching the repo's `Node16`/ES2022 tsconfig; no existing test precedent elsewhere in the monorepo's own packages to conform to or conflict with. There's no CI in this repo, so verification means running these tests locally. |
+| `@forja/orm` → `@forja/json-driver` dependency type | Normal `dependencies`, not `peerDependencies` | Matches the repo convention: `peerDependencies` are for what copied *template* code directly `require()`s in a consumer project. `@forja/json-driver` is only used internally by `@forja/orm`'s own compiled code. |
 
 ## On-disk format
 
@@ -81,7 +107,7 @@ internal node, so height 3 already addresses ~88³ ≈ 681K leaf pages.
 ## Module layout
 
 ```
-packages/json-engine/                    # NEW package, zero Forja dependency
+packages/addon-json-driver/                    # NEW package, zero Forja dependency
   package.json  tsconfig.json
   src/
     constants.ts     # PAGE_SIZE, header offsets, page-type tags, size limits
@@ -101,17 +127,17 @@ packages/json-engine/                    # NEW package, zero Forja dependency
     pager.test.ts  slottedPage.test.ts  btree.test.ts  overflow.test.ts  database.test.ts
 
 packages/addon-orm/                      # EXISTING, modified
-  package.json      # + "files": ["dist","templates"], + dependencies.@forja/json-engine
+  package.json      # + "files": ["dist","templates"], + dependencies.@forja/json-driver
   src/
     index.ts             # was `export {}` → re-exports createJsonRepository
     jsonRepository.ts     # NEW: createJsonRepository<T>(filePath): Promise<Repository<T>>
   templates/                # NEW directory
     orm.repository.js        # composition-root example, mirrors auth.route.js's wiring
 
-tsconfig.json (root)   # + { "path": "packages/json-engine" } in references array
+tsconfig.json (root)   # + { "path": "packages/addon-json-driver" } in references array
 ```
 
-Public engine API (`packages/json-engine/src/index.ts`):
+Public engine API (`packages/addon-json-driver/src/index.ts`):
 
 ```ts
 export interface JsonEngineOptions { pageSize?: number; maxCachedPages?: number; }
@@ -132,7 +158,7 @@ export function openDatabase(filePath: string, options?: JsonEngineOptions): Pro
 `contracts.assertImplements("Repository", repository, contracts.REPOSITORY_METHODS)` —
 the same pattern `auth.engine.js` uses. `findOne(criteria)` maps onto `db.scan()` with an
 in-memory partial-match predicate. Each "collection" = one engine file (e.g.
-`data/users.json-engine`); the engine itself has no concept of collections.
+`data/users.json-driver`); the engine itself has no concept of collections.
 
 ## Build order (each milestone independently testable before the next depends on it)
 
@@ -150,7 +176,7 @@ in-memory partial-match predicate. Each "collection" = one engine file (e.g.
 
 ## Verification
 
-- `npm run test -w @forja/json-engine` (Vitest) after each milestone — no CI exists in this repo, so this is the actual gate.
+- `npm run test -w @forja/json-driver` (Vitest) after each milestone — no CI exists in this repo, so this is the actual gate.
 - `tsc -b` at the repo root after milestones 1 and 10, to confirm the new package's project-reference wiring and `@forja/orm`'s updated `src/index.ts` both compile cleanly across the whole graph.
 - End-to-end smoke check after milestone 10: a small script that `createJsonRepository`s a temp file, `create`s a few records, `findById`/`findOne`s them back, `update`s and `delete`s one, then reopens the same file path in a fresh process and confirms the surviving records read back correctly.
 

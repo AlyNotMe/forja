@@ -1,0 +1,17 @@
+{
+  "name": "@forja/json-driver",
+  "version": "0.0.0",
+  "description": "A standalone, page-based B+tree JSON storage engine — usable with or without @forja/orm.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "vitest": "^2"
+  }
+}
