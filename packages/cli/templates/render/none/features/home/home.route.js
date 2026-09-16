@@ -1,5 +1,4 @@
 const router = require("express").Router();
-const config = require("../../config");
 
 // DEMO ONLY — hand-rolled language detection just to prove the concept here.
 // Not a pattern to copy into your own features. Once @forja/addon-i18n ships:
@@ -18,7 +17,7 @@ const translations = {
 router.get(["/", "/:lang(en|fr)"], (req, res) => {
   const lang = req.params.lang || req.acceptsLanguages("fr", "en") || "en";
   res.json({
-    message: `${translations[lang].welcome} ${config.name}`,
+    message: `${translations[lang].welcome} ${req.app.get("config").name}`,
     docs: "https://github.com/AlyNotMe/forja",
   });
 });
