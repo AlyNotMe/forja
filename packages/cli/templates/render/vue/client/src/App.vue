@@ -19,26 +19,7 @@ const t = translations[lang];
     <div class="glow" aria-hidden="true"></div>
 
     <div class="content">
-      <svg width="88" height="88" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="forja-g" x1="4" y1="4" x2="76" y2="76" gradientUnits="userSpaceOnUse">
-            <stop offset="0%" stop-color="#FFB3E6" />
-            <stop offset="52%" stop-color="#B796FF" />
-            <stop offset="100%" stop-color="#8A7CFF" />
-          </linearGradient>
-          <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="3" result="blur" />
-            <feMerge>
-              <feMergeNode in="blur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-        </defs>
-        <path d="M 10 10 L 24 10 L 24 70 L 10 70 Z" fill="url(#forja-g)" filter="url(#glow)" />
-        <path d="M 24 10 L 66 10 L 63 23 L 24 23 Z" fill="url(#forja-g)" filter="url(#glow)" />
-        <path d="M 24 37 L 53 37 L 50 49 L 24 49 Z" fill="url(#forja-g)" filter="url(#glow)" />
-        <path d="M 69 7 L 71 2 L 73 7 L 78 9 L 73 11 L 71 16 L 69 11 L 64 9 Z" fill="#FFB3E6" opacity="0.9" />
-      </svg>
+      <img class="logo" src="/logo.png" width="88" height="88" alt="Forja logo" />
 
       <div>
         <p class="eyebrow">{{ t.welcome }}</p>
