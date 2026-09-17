@@ -13,7 +13,6 @@ import { PAGE_TYPE_LEAF, PAGE_HEADER_OFFSET_TYPE } from "./constants";
 
 export interface JsonEngineOptions {
   pageSize?: number;
-  maxCachedPages?: number;
 }
 
 export interface JsonDatabase {
