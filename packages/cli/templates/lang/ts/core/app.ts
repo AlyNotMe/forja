@@ -1,7 +1,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import express from "express";
-import { RouteRegistry, MiddlewareRegistry } from "@forja/core";
+import { RouteRegistry, MiddlewareRegistry } from "@forjajs/core";
+import config from "../config";
 
 // Always resolved from the project root (where the app is started), never from
 // __dirname — once compiled, __dirname points into dist/, but features/,
@@ -11,6 +12,13 @@ const projectRoot = process.cwd();
 
 const app = express();
 app.use(express.json());
+app.use(express.static(path.join(projectRoot, "public")));
+
+// Exposed via `req.app.get("config")` instead of a plain `require("../config")`
+// in feature/route files — those live under features/ and are never compiled,
+// so a relative require would break in TS projects (config.ts only ever exists
+// compiled inside dist/). Going through the app instance sidesteps that entirely.
+app.set("config", config);
 
 // forja.view.json is present only when the chosen render option is a server-side
 // view engine (EJS/Pug/Handlebars) — absent for API-only or SPA-frontend projects.

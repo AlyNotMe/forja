@@ -1,5 +1,5 @@
 {
-  "name": "@forja/addon-auth",
+  "name": "@forjajs/addon-auth",
   "version": "0.0.0",
   "description": "Forja official Auth addon: sessions/JWT, password hashing, route guard.",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@forja/core": "*",
-    "@forja/addon-validator": "*"
+    "@forjajs/core": "*",
+    "@forjajs/addon-validator": "*"
   }
 }

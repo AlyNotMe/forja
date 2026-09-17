@@ -1,8 +1,8 @@
-const { contracts } = require("@forja/core");
+const { contracts } = require("@forjajs/core");
 
 /**
  * Auth engine: knows nothing about bcrypt, the database, or any concrete stack
- * choice. It only depends on two contracts from @forja/core, injected by whoever
+ * choice. It only depends on two contracts from @forjajs/core, injected by whoever
  * wires the route (the composition root, see auth.route.js):
  *
  *   hasher: Hasher contract     (hash/verify)

@@ -7,10 +7,10 @@ const OFFICIAL_PRESETS = ["auth", "orm", "realtime", "i18n"] as const;
 type Preset = (typeof OFFICIAL_PRESETS)[number];
 
 const PACKAGE_NAME: Record<Preset, string> = {
-  auth: "@forja/addon-auth",
-  orm: "@forja/orm",
-  realtime: "@forja/addon-realtime",
-  i18n: "@forja/addon-i18n",
+  auth: "@forjajs/addon-auth",
+  orm: "@forjajs/orm",
+  realtime: "@forjajs/addon-realtime",
+  i18n: "@forjajs/addon-i18n",
 };
 
 interface JsonObject {
@@ -39,12 +39,12 @@ export default class AddCommand extends Command {
       this.error(`No package.json found in "${cwd}" — run this inside a Forja project.`);
     }
 
-    // Locate the addon package on disk (installed dependency of @forja/cli).
+    // Locate the addon package on disk (installed dependency of @forjajs/cli).
     let addonPackageJsonPath: string;
     try {
       addonPackageJsonPath = require.resolve(`${packageName}/package.json`);
     } catch {
-      this.error(`Could not resolve "${packageName}". Is it installed alongside @forja/cli?`);
+      this.error(`Could not resolve "${packageName}". Is it installed alongside @forjajs/cli?`);
     }
     const addonDir = path.dirname(addonPackageJsonPath);
     const templatesDir = path.join(addonDir, "templates");

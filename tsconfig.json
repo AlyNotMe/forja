@@ -7,6 +7,7 @@
     { "path": "packages/addon-orm" },
     { "path": "packages/addon-realtime" },
     { "path": "packages/addon-i18n" },
+    { "path": "packages/addon-json-driver" },
     { "path": "packages/cli" }
   ]
 }

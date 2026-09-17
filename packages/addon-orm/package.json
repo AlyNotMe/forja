@@ -1,5 +1,5 @@
 {
-  "name": "@forja/orm",
+  "name": "@forjajs/orm",
   "version": "0.0.0",
   "description": "Forja in-house multi-DB ORM (JSON, SQL, MySQL...).",
   "main": "dist/index.js",
@@ -10,6 +10,6 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@forja/core": "*"
+    "@forjajs/core": "*"
   }
 }

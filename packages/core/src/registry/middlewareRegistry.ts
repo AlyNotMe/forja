@@ -17,7 +17,7 @@ export interface MiddlewareRegistryOptions {
  * This is deliberately NOT for feature-scoped middlewares like an auth guard:
  * those must apply to specific routes only, never to 100% of requests, so they
  * stay a plain import in whichever route file needs them (see auth.route.js in
- * @forja/addon-auth) instead of being auto-mounted here.
+ * @forjajs/addon-auth) instead of being auto-mounted here.
  */
 export class MiddlewareRegistry {
   constructor(

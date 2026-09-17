@@ -1,5 +1,5 @@
 require("dotenv").config();
-const { createConfig } = require("@forja/core");
+const { createConfig } = require("@forjajs/core");
 
 // Add fields here as your project needs them (session secrets, DB URL...) — this
 // is your project's own config, not something Forja imposes a fixed shape for.

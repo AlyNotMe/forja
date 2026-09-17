@@ -1,0 +1,44 @@
+{
+  "name": "@forjajs/json-driver",
+  "version": "0.1.1",
+  "description": "A standalone, page-based B+tree JSON storage engine — usable with or without @forjajs/orm.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "license": "MIT",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "database",
+    "storage-engine",
+    "b-tree",
+    "btree",
+    "json",
+    "embedded-database",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlyNotMe/forja.git",
+    "directory": "packages/addon-json-driver"
+  },
+  "homepage": "https://github.com/AlyNotMe/forja/tree/main/packages/addon-json-driver#readme",
+  "bugs": {
+    "url": "https://github.com/AlyNotMe/forja/issues"
+  },
+  "author": "KMS",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "rm -rf dist",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "vitest": "^2"
+  }
+}

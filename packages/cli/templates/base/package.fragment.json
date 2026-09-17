@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "scripts": {},
   "dependencies": {
-    "@forja/core": "*",
+    "@forjajs/core": "*",
     "express": "^4",
     "dotenv": "^16"
   },

@@ -31,7 +31,7 @@ organique.
 
 Le noyau ne maintient pas de fichier de routes centralisé à la main. Il scanne des
 dossiers conventionnels au démarrage et enregistre automatiquement ce qu'il y
-trouve — implémenté dans le module `registry/` de `@forja/core` :
+trouve — implémenté dans le module `registry/` de `@forjajs/core` :
 
 - **`RouteRegistry`** scanne récursivement `features/**/*.route.js`, require chaque
   fichier, et monte ce qu'il exporte (un Router Express) sur l'app. Déposer un
@@ -44,7 +44,7 @@ trouve — implémenté dans le module `registry/` de `@forja/core` :
   sont volontairement **pas** auto-montés ici : ils s'appliqueraient à 100% des
   requêtes, ce qui n'est presque jamais ce qu'un guard doit faire. Ils restent un
   simple `require()` dans le fichier de route qui en a besoin — voir
-  `auth.route.js` dans `@forja/addon-auth`. Un middleware réutilisé par plusieurs
+  `auth.route.js` dans `@forjajs/addon-auth`. Un middleware réutilisé par plusieurs
   features reste un simple import, qu'il vive dans son dossier de feature d'origine
   ou soit remonté dans `shared/middlewares/` pour plus de clarté — la promotion vers
   le registry ne concerne que les middlewares qui appartiennent vraiment à chaque
@@ -85,7 +85,7 @@ dossiers techniques éloignés.
 ### Contrats (Inversion de dépendance)
 
 Le noyau ne dépend jamais d'un choix de stack concret — seulement de contrats
-(interfaces) que n'importe quelle implémentation peut remplir. `@forja/core` expose
+(interfaces) que n'importe quelle implémentation peut remplir. `@forjajs/core` expose
 un module `contracts/` :
 
 - **Hasher** — `hash(plain)` / `verify(plain, hash)`. Rempli par bcrypt, argon2, ou
@@ -173,7 +173,7 @@ via `forja add <addon>`, découplés du noyau.
 
 ## Langage
 
-Forja lui-même (`@forja/core`, `@forja/cli`, tous les addons officiels) est écrit en
+Forja lui-même (`@forjajs/core`, `@forjajs/cli`, tous les addons officiels) est écrit en
 **TypeScript**, compilé en JS pour la publication npm — les contrats décrits
 ci-dessus sont de vraies interfaces TS, vérifiées à la compilation, pas juste de la
 documentation. C'est un choix propre au code du framework, indépendant du choix
@@ -212,7 +212,7 @@ Commandes prévues :
 Chaque projet généré reçoit un `config.js`/`config.ts` à sa racine plus `.env` et
 `.env.example` — une généralisation directe du `config.js` de NeoChess-Legacy
 (basé sur l'env, fail-fast sur les valeurs requises manquantes via
-`createConfig` de `@forja/core`) mais **sans forme fixe** : les champs par défaut
+`createConfig` de `@forjajs/core`) mais **sans forme fixe** : les champs par défaut
 sont `env` (`NODE_ENV`), `name` (`APP_NAME`), `host` (`HOST`) et `port` (`PORT`),
 et le projet possède ce fichier — ajoute ce dont ton projet a besoin (secret de
 session, URL de DB...) sans que Forja n'impose quoi que ce soit au-delà de ces
@@ -243,7 +243,7 @@ compilés, ils n'existent qu'à la racine du projet.
 Le nom **Forja** est retenu et réservé (npm + GitHub). Fonctionnel et testé de bout
 en bout aujourd'hui :
 
-- `@forja/core` : contrats, auto-discovery `RouteRegistry`/`MiddlewareRegistry`,
+- `@forjajs/core` : contrats, auto-discovery `RouteRegistry`/`MiddlewareRegistry`,
   `createConfig`, `wrapAsync`.
 - `forja new` : compose un projet réellement lançable pour n'importe quelle
   combinaison langage × rendu × css × tests. Vérifié par des exécutions réelles,
@@ -266,7 +266,7 @@ en bout aujourd'hui :
   routes (même convention d'URL que le `/:language?/login` de NeoChess-Legacy, `/`
   détectant automatiquement via `Accept-Language`), et le CSR utilise
   `navigator.language` côté client — autonome, pas branché sur
-  `@forja/addon-i18n` puisque ce package est encore vide ; une fois qu'il existera,
+  `@forjajs/addon-i18n` puisque ce package est encore vide ; une fois qu'il existera,
   les vraies features devront l'utiliser à la place. Chaque copie de cette démo
   porte un commentaire qui explique précisément quoi supprimer et remplacer une
   fois l'addon disponible. Aucun outil de nettoyage nécessaire : c'est du code
@@ -275,9 +275,9 @@ en bout aujourd'hui :
   Vite.
 - `forja make:engine <name>` : génère les fichiers route/engine/lang/middleware/test
   d'une feature.
-- `forja add auth` : copie les templates de `@forja/addon-auth` dans
+- `forja add auth` : copie les templates de `@forjajs/addon-auth` dans
   `features/auth/` et fusionne ses dépendances dans le `package.json` du projet.
-- `@forja/addon-auth` et `@forja/addon-validator` : entièrement fonctionnels, basés
+- `@forjajs/addon-auth` et `@forjajs/addon-validator` : entièrement fonctionnels, basés
   DIP (l'engine ne connaît que les contrats `Hasher`/`Repository`, jamais bcrypt ni
   une base de données).
 
