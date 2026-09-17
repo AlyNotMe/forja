@@ -1,11 +1,11 @@
 const router = require("express").Router();
-const { validateBody } = require("@forja/addon-validator");
+const { validateBody } = require("@forjajs/addon-validator");
 const { createAuthEngine } = require("./auth.engine");
 const hasher = require("./auth.password");
 
-// TODO: replace with the in-house ORM's users repository once @forja/orm exists.
-// Must fulfill the Repository contract from @forja/core (findById/findOne/create/
-// update/delete) — swap this stub for @forja/orm's repository without touching
+// TODO: replace with the in-house ORM's users repository once @forjajs/orm exists.
+// Must fulfill the Repository contract from @forjajs/core (findById/findOne/create/
+// update/delete) — swap this stub for @forjajs/orm's repository without touching
 // auth.engine.js.
 const users = {
   async findById(id) {

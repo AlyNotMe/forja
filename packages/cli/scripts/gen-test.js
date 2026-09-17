@@ -1,6 +1,6 @@
 // Dev-only utility (not published — excluded by package.json's "files").
 // Regenerates every lang x render test project under dev/test/, wiring
-// @forja/core via a manual symlink (npm link is broken under Volta here)
+// @forjajs/core via a manual symlink (npm link is broken under Volta here)
 // since it isn't published to a registry.
 //
 // Usage: node scripts/gen-test.js [testDir]
@@ -31,14 +31,14 @@ function generate(targetDir, { lang, render, css, tests }) {
     copyLayer(layer, targetDir);
     pkg = mergeFragment(pkg, layer);
   }
-  // @forja/core isn't published to a registry — strip it before `npm install`
+  // @forjajs/core isn't published to a registry — strip it before `npm install`
   // and wire it back in via a manual symlink instead.
-  delete pkg.dependencies["@forja/core"];
+  delete pkg.dependencies["@forjajs/core"];
   fs.writeFileSync(path.join(targetDir, "package.json"), JSON.stringify(pkg, null, 2) + "\n");
 }
 
 function linkCore(targetDir) {
-  const scope = path.join(targetDir, "node_modules", "@forja");
+  const scope = path.join(targetDir, "node_modules", "@forjajs");
   fs.mkdirSync(scope, { recursive: true });
   const link = path.join(scope, "core");
   fs.rmSync(link, { force: true });

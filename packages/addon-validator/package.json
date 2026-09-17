@@ -1,5 +1,5 @@
 {
-  "name": "@forja/addon-validator",
+  "name": "@forjajs/addon-validator",
   "version": "0.0.0",
   "description": "Forja official input validator addon: schema-based validation of request input, no external dependency.",
   "main": "dist/index.js",
@@ -10,7 +10,7 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@forja/core": "*"
+    "@forjajs/core": "*"
   },
   "devDependencies": {
     "@types/express": "^4"

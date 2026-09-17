@@ -1,7 +1,7 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const express = require("express");
-const { RouteRegistry, MiddlewareRegistry } = require("@forja/core");
+const { RouteRegistry, MiddlewareRegistry } = require("@forjajs/core");
 const config = require("../config");
 
 // Always resolved from the project root (where the app is started), never from

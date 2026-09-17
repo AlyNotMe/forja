@@ -1,7 +1,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import express from "express";
-import { RouteRegistry, MiddlewareRegistry } from "@forja/core";
+import { RouteRegistry, MiddlewareRegistry } from "@forjajs/core";
 import config from "../config";
 
 // Always resolved from the project root (where the app is started), never from

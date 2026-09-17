@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { createConfig } from "@forja/core";
+import { createConfig } from "@forjajs/core";
 
 // Add fields here as your project needs them (session secrets, DB URL...) — this
 // is your project's own config, not something Forja imposes a fixed shape for.

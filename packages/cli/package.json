@@ -1,5 +1,5 @@
 {
-  "name": "@forja/cli",
+  "name": "@forjajs/cli",
   "version": "0.0.0",
   "description": "Forja scaffolding CLI — forja new / forja add / forja make:engine.",
   "license": "MIT",
@@ -32,11 +32,11 @@
   "dependencies": {
     "@oclif/core": "^4",
     "@oclif/plugin-help": "^6",
-    "@forja/addon-auth": "*",
-    "@forja/addon-validator": "*",
-    "@forja/orm": "*",
-    "@forja/addon-realtime": "*",
-    "@forja/addon-i18n": "*",
+    "@forjajs/addon-auth": "*",
+    "@forjajs/addon-validator": "*",
+    "@forjajs/orm": "*",
+    "@forjajs/addon-realtime": "*",
+    "@forjajs/addon-i18n": "*",
     "prompts": "^2"
   },
   "devDependencies": {

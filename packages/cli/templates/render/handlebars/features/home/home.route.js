@@ -1,7 +1,7 @@
 const router = require("express").Router();
 
 // DEMO ONLY — hand-rolled language detection just to prove the concept here.
-// Not a pattern to copy into your own features. Once @forja/addon-i18n ships:
+// Not a pattern to copy into your own features. Once @forjajs/addon-i18n ships:
 //   1. `forja add i18n` to install its global middleware.
 //   2. Delete `translations` and the `/:lang(en|fr)` param below — the addon
 //      parses the URL language for you.

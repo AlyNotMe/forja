@@ -1,5 +1,5 @@
 {
-  "name": "@forja/addon-realtime",
+  "name": "@forjajs/addon-realtime",
   "version": "0.0.0",
   "description": "Forja official realtime addon (socket.io Engine).",
   "main": "dist/index.js",
@@ -10,6 +10,6 @@
     "clean": "rm -rf dist"
   },
   "peerDependencies": {
-    "@forja/core": "*"
+    "@forjajs/core": "*"
   }
 }

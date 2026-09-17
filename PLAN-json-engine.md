@@ -1,4 +1,4 @@
-# `@forja/json-driver` — a real, page-based B+tree JSON storage engine
+# `@forjajs/json-driver` — a real, page-based B+tree JSON storage engine
 
 ## Addon philosophy: drivers are swappable, everything works standalone
 
@@ -6,32 +6,32 @@ Forja's core rule ("libre par défaut, équipé par choix") applies recursively:
 just Forja itself, but every addon, must be usable on its own — outside Forja,
 and outside the other addons it's designed to pair with.
 
-`@forja/orm` (existing empty scaffold at `packages/addon-orm/`) is **DB-agnostic**.
+`@forjajs/orm` (existing empty scaffold at `packages/addon-orm/`) is **DB-agnostic**.
 It only knows a small storage-driver contract (see `Repository<T>` /
 `JsonEngineOptions`-shaped API below) — never a concrete storage implementation.
-`@forja/json-driver` is the **first official driver**: a real page-based B+tree
+`@forjajs/json-driver` is the **first official driver**: a real page-based B+tree
 engine, but it's just one interchangeable implementation. A future
-`@forja/mysql-driver` or `@forja/postgres-driver` would plug into `@forja/orm`
+`@forjajs/mysql-driver` or `@forjajs/postgres-driver` would plug into `@forjajs/orm`
 the exact same way. This mirrors the `Hasher` contract / `auth.password.js`
 pattern already used by `addon-auth`: the engine (`auth.engine.js`, or here
-`@forja/orm`) depends only on a contract, never on bcrypt or a specific driver.
+`@forjajs/orm`) depends only on a contract, never on bcrypt or a specific driver.
 
 Concretely, this means three valid, independent ways to use this work once it
 ships:
-1. **`@forja/json-driver` alone** — any Node project can `openDatabase()`
-   directly, with zero `@forja/orm` and zero Forja dependency at all.
-2. **`@forja/orm` + `@forja/json-driver`** — the common Forja case, wired via
+1. **`@forjajs/json-driver` alone** — any Node project can `openDatabase()`
+   directly, with zero `@forjajs/orm` and zero Forja dependency at all.
+2. **`@forjajs/orm` + `@forjajs/json-driver`** — the common Forja case, wired via
    `forja add orm` (or `forja add json-driver`, or both).
-3. **`@forja/orm` + a different driver** (e.g. a future MySQL driver) — same
-   `Repository<T>` contract, different backing store, `@forja/orm`'s own code
+3. **`@forjajs/orm` + a different driver** (e.g. a future MySQL driver) — same
+   `Repository<T>` contract, different backing store, `@forjajs/orm`'s own code
    never changes.
 
 ## Context
 
-Forja's addon ecosystem (`packages/addon-orm/`, npm name `@forja/orm`) is currently an
+Forja's addon ecosystem (`packages/addon-orm/`, npm name `@forjajs/orm`) is currently an
 empty scaffold. The README already commits Forja to shipping an in-house, multi-DB ORM,
 and every addon in this repo follows strict dependency inversion: an engine depends only
-on a **contract** from `@forja/core` (`Hasher`, `Repository`...), never on a concrete
+on a **contract** from `@forjajs/core` (`Hasher`, `Repository`...), never on a concrete
 implementation — see `auth.engine.js`, which knows only the `Hasher`/`Repository`
 contracts, while the concrete bcrypt implementation lives isolated in `auth.password.js`.
 
@@ -44,14 +44,14 @@ a real storage engine rather than reach for something like lowdb, which does no 
 at all and would gain nothing from being wrapped.
 
 Confirmed with the user: the engine must be **fully decoupled from Forja** — no dependency
-on `@forja/core`, Express, or any Forja concept — so it's usable standalone by any Node
-project, not just inside a Forja app. `@forja/orm` becomes a thin adapter on top, exposing
+on `@forjajs/core`, Express, or any Forja concept — so it's usable standalone by any Node
+project, not just inside a Forja app. `@forjajs/orm` becomes a thin adapter on top, exposing
 a `Repository<T>`-conforming implementation, mirroring exactly how `auth.engine.js`
 depends on the `Hasher` contract while a separate file holds the concrete implementation.
 
 `auth.route.js` already has a stub `users` repository object with a TODO pointing at this
 exact future integration ("replace with the in-house ORM's users repository once
-`@forja/orm` exists") — that's the concrete acceptance target, though wiring it in is
+`@forjajs/orm` exists") — that's the concrete acceptance target, though wiring it in is
 flagged as an optional stretch milestone (it requires making that file's composition root
 async, out of scope for the core deliverable).
 
@@ -59,7 +59,7 @@ async, out of scope for the core deliverable).
 
 | Decision | Choice | Why |
 |---|---|---|
-| Package split | New standalone package **`packages/addon-json-driver`** (`@forja/json-driver`), library-shaped (compiled TS, real `dist/`) | Contains real machinery (Pager, B+tree, overflow) that must not be copy-pasted per-project like `addon-auth`'s templates are; zero Forja dependency so it's usable outside Forja entirely. |
+| Package split | New standalone package **`packages/addon-json-driver`** (`@forjajs/json-driver`), library-shaped (compiled TS, real `dist/`) | Contains real machinery (Pager, B+tree, overflow) that must not be copy-pasted per-project like `addon-auth`'s templates are; zero Forja dependency so it's usable outside Forja entirely. |
 | Page size | **4096 bytes** | Matches common OS/filesystem block size; SQLite's modern default for the same problem. |
 | fs API | **`fs.promises`**, page-granular reads/writes at explicit offsets — never whole-file reads | This runs inside Express request handlers; sync I/O would stall the event loop for every concurrent request. |
 | Tree shape | **B+tree** (data only in leaves, leaves linked via right-sibling pointer) | Leaf-chain scan is O(leaf pages), not a recursive walk — matches the `scan()`/`findOne` requirement. |
@@ -69,7 +69,7 @@ async, out of scope for the core deliverable).
 | Concurrency | Single in-process **async mutex** serializing every public `JsonDatabase` call (reads included) | No WAL/MVCC, so concurrent read+write against the same pages is unsafe. Multi-process locking is explicitly out of scope. |
 | Durability | `flush()` (write dirty pages + fsync) after each top-level operation and on `close()` — **not** per individual page write | Best-effort, not crash-atomic. True crash-safety needs a WAL — explicitly out of scope for v1, documented as a known limitation. |
 | Test runner | **Vitest**, devDependency scoped to `packages/addon-json-driver/package.json` only | Zero-config TS/ESM support matching the repo's `Node16`/ES2022 tsconfig; no existing test precedent elsewhere in the monorepo's own packages to conform to or conflict with. There's no CI in this repo, so verification means running these tests locally. |
-| `@forja/orm` → `@forja/json-driver` dependency type | Normal `dependencies`, not `peerDependencies` | Matches the repo convention: `peerDependencies` are for what copied *template* code directly `require()`s in a consumer project. `@forja/json-driver` is only used internally by `@forja/orm`'s own compiled code. |
+| `@forjajs/orm` → `@forjajs/json-driver` dependency type | Normal `dependencies`, not `peerDependencies` | Matches the repo convention: `peerDependencies` are for what copied *template* code directly `require()`s in a consumer project. `@forjajs/json-driver` is only used internally by `@forjajs/orm`'s own compiled code. |
 
 ## On-disk format
 
@@ -127,7 +127,7 @@ packages/addon-json-driver/                    # NEW package, zero Forja depende
     pager.test.ts  slottedPage.test.ts  btree.test.ts  overflow.test.ts  database.test.ts
 
 packages/addon-orm/                      # EXISTING, modified
-  package.json      # + "files": ["dist","templates"], + dependencies.@forja/json-driver
+  package.json      # + "files": ["dist","templates"], + dependencies.@forjajs/json-driver
   src/
     index.ts             # was `export {}` → re-exports createJsonRepository
     jsonRepository.ts     # NEW: createJsonRepository<T>(filePath): Promise<Repository<T>>
@@ -152,7 +152,7 @@ export interface JsonDatabase {
 export function openDatabase(filePath: string, options?: JsonEngineOptions): Promise<JsonDatabase>;
 ```
 
-`@forja/orm`'s adapter (`jsonRepository.ts`) wraps `openDatabase()` and implements
+`@forjajs/orm`'s adapter (`jsonRepository.ts`) wraps `openDatabase()` and implements
 `Repository<T>` from `packages/core/src/contracts/repository.ts`
 (`findById`/`findOne`/`create`/`update`/`delete`), validated at construction via
 `contracts.assertImplements("Repository", repository, contracts.REPOSITORY_METHODS)` —
@@ -171,13 +171,13 @@ in-memory partial-match predicate. Each "collection" = one engine file (e.g.
 7. **Real B+tree** — leaf split, internal nodes, cascading split-on-insert, root growth. Test: forced splits at various fill levels (using a small test-only page size), including a root split growing tree height; every previously-inserted key still findable after each split.
 8. **Tombstone delete** — intra-page compaction + empty-leaf reclamation. Test: delete-then-reinsert reuses freed pages; remaining keys still found via both `get()` and `scan()` at sub-50% occupancy.
 9. **Public API** — `database.ts` + `mutex.ts` + `openDatabase()`. Test: `scan()` predicate filtering in key order; N concurrent read-modify-write ops against one field settle to exactly N (proves the mutex actually serializes — the single most important concurrency test).
-10. **`@forja/orm` adapter** — `createJsonRepository`, `templates/orm.repository.js`, `package.json` changes.
+10. **`@forjajs/orm` adapter** — `createJsonRepository`, `templates/orm.repository.js`, `package.json` changes.
 11. *(Stretch, optional)* — wire `createJsonRepository` into `auth.route.js` in place of the stub, replacing the TODO comment. Requires making that file's composition root async-bootstrap-aware; not required for this plan's core deliverable.
 
 ## Verification
 
-- `npm run test -w @forja/json-driver` (Vitest) after each milestone — no CI exists in this repo, so this is the actual gate.
-- `tsc -b` at the repo root after milestones 1 and 10, to confirm the new package's project-reference wiring and `@forja/orm`'s updated `src/index.ts` both compile cleanly across the whole graph.
+- `npm run test -w @forjajs/json-driver` (Vitest) after each milestone — no CI exists in this repo, so this is the actual gate.
+- `tsc -b` at the repo root after milestones 1 and 10, to confirm the new package's project-reference wiring and `@forjajs/orm`'s updated `src/index.ts` both compile cleanly across the whole graph.
 - End-to-end smoke check after milestone 10: a small script that `createJsonRepository`s a temp file, `create`s a few records, `findById`/`findOne`s them back, `update`s and `delete`s one, then reopens the same file path in a fresh process and confirms the surviving records read back correctly.
 
 ## Critical files

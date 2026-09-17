@@ -1,5 +1,5 @@
 {
-  "name": "@forja/core",
+  "name": "@forjajs/core",
   "version": "0.0.0",
   "description": "Forja core: registry-driven, feature-based Express foundation.",
   "main": "dist/index.js",
