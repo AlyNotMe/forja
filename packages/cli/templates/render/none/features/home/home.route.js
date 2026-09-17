@@ -18,7 +18,7 @@ router.get(["/", "/:lang(en|fr)"], (req, res) => {
   const lang = req.params.lang || req.acceptsLanguages("fr", "en") || "en";
   res.json({
     message: `${translations[lang].welcome} ${req.app.get("config").name}`,
-    docs: "https://github.com/AlyNotMe/forja",
+    docs: "https://github.com/forjajs/forja",
   });
 });
 
