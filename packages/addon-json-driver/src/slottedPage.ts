@@ -3,7 +3,14 @@ import {
   PAGE_HEADER_OFFSET_CELL_CONTENT_START,
   PAGE_HEADER_SIZE,
   CELL_POINTER_SIZE,
+  PAGE_HEADER_OFFSET_TYPE,
 } from "./constants";
+
+export function initEmptyPage(page: Buffer, pageType: number): void {
+  page.writeUInt8(pageType, PAGE_HEADER_OFFSET_TYPE);
+  setNumCells(page, 0);
+  setCellContentStart(page, page.length);
+}
 
 export function getNumCells(page: Buffer): number {
   return page.readUInt16LE(PAGE_HEADER_OFFSET_NUM_CELLS);
