@@ -6,6 +6,7 @@ import {
 } from "../constants";
 import { Pager } from "../pager";
 import {
+  compactPage,
   deleteCellAt,
   findCellIndex,
   getCellPointer,
@@ -312,19 +313,91 @@ export async function remove(
   rootPage: number,
   key: string,
 ): Promise<void> {
-  const leaf = await pager.readPage(rootPage);
-  const { index, found } = findCellIndex(leaf, key, readLeafKeyAt);
+  await removeFromNode(pager, rootPage, key, true);
+}
 
-  if (!found) return;
+async function removeFromNode(
+  pager: Pager,
+  pageId: number,
+  key: string,
+  isRoot = false,
+): Promise<boolean> {
+  const page = await pager.readPage(pageId);
+  const pageType = page.readUInt8(PAGE_HEADER_OFFSET_TYPE);
 
-  const offset = getCellPointer(leaf, index);
+  if (pageType === PAGE_TYPE_LEAF) {
+    return removeFromLeaf(pager, pageId, page, key, isRoot);
+  }
+  return removeFromInternal(pager, pageId, page, key);
+}
+
+async function removeFromLeaf(
+  pager: Pager,
+  pageId: number,
+  page: Buffer,
+  key: string,
+  isRoot: boolean,
+): Promise<boolean> {
+  const { index, found } = findCellIndex(page, key, readLeafKeyAt);
+  if (!found) return false;
+
+  const offset = getCellPointer(page, index);
   const existing = decodeLeafCell(
-    leaf.subarray(offset, offset + getLeafCellSize(leaf, offset)),
+    page.subarray(offset, offset + getLeafCellSize(page, offset)),
   );
   if (existing.overflowPage !== 0) {
     await freeOverflowChain(pager, existing.overflowPage);
   }
 
-  deleteCellAt(leaf, index);
-  await pager.writePage(rootPage, leaf);
+  deleteCellAt(page, index);
+  compactPage(page, getLeafCellSize);
+
+  const isEmpty = getNumCells(page) === 0;
+  if (isEmpty && !isRoot) {
+    await pager.freePage(pageId);
+    return true;
+  }
+
+  await pager.writePage(pageId, page);
+  return false;
+}
+
+async function removeFromInternal(
+  pager: Pager,
+  pageId: number,
+  page: Buffer,
+  key: string,
+): Promise<boolean> {
+  const childPageId = findChildPage(page, key);
+  const childBecameEmpty = await removeFromNode(pager, childPageId, key);
+
+  if (!childBecameEmpty) return false;
+
+  if (childPageId === getLeftmostChild(page)) {
+    if (getNumCells(page) === 0) {
+      await pager.writePage(pageId, page); // dégénéré, rien à débrancher de plus
+      return false;
+    }
+    const offset = getCellPointer(page, 0);
+    const firstCell = decodeInternalCell(
+      page.subarray(offset, offset + getInternalCellSize(page, offset)),
+    );
+    setLeftmostChild(page, firstCell.rightChildPage);
+    deleteCellAt(page, 0);
+  } else {
+    const numCells = getNumCells(page);
+    for (let i = 0; i < numCells; i++) {
+      const offset = getCellPointer(page, i);
+      const cell = decodeInternalCell(
+        page.subarray(offset, offset + getInternalCellSize(page, offset)),
+      );
+      if (cell.rightChildPage === childPageId) {
+        deleteCellAt(page, i);
+        break;
+      }
+    }
+  }
+
+  await pager.writePage(pageId, page);
+  return false;
 }
