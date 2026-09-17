@@ -49,6 +49,10 @@ export class Pager {
     return pager;
   }
 
+  getPageSize(): number {
+    return this.pageSize;
+  }
+
   async readPage(pageId: number): Promise<Buffer> {
     const cached = this.cache.get(pageId);
     if (cached) return Buffer.from(cached);
