@@ -53,6 +53,15 @@ export class Pager {
     return this.pageSize;
   }
 
+  getRootPage(): number {
+    return this.header.rootPage;
+  }
+
+  async setRootPage(pageId: number): Promise<void> {
+    this.header.rootPage = pageId;
+    await this.writePage(0, serializeHeader(this.header));
+  }
+
   async readPage(pageId: number): Promise<Buffer> {
     const cached = this.cache.get(pageId);
     if (cached) return Buffer.from(cached);
