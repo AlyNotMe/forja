@@ -1,4 +1,4 @@
-import type { contracts } from "@forjajs/core";
+import type * as contracts from "@forjajs/contracts";
 import type { QueryCriteria } from "./query";
 
 export type FieldType = "string" | "number" | "boolean" | "object" | "relation";

@@ -13,7 +13,7 @@
     "test:services:down": "docker compose -f docker-compose.test.yml down -v"
   },
   "peerDependencies": {
-    "@forjajs/core": "*"
+    "@forjajs/contracts": "*"
   },
   "files": [
     "dist",

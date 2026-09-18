@@ -40,7 +40,7 @@ Forja (the same pattern backs `Hasher`/bcrypt in `@forjajs/addon-auth`):
 
 > **`@forjajs/orm` depends on a *contract*, never on a concrete driver.**
 
-The contract is `Repository<T>` (from `@forjajs/core`):
+The contract is `Repository<T>` (from `@forjajs/contracts`):
 
 ```ts
 interface Repository<T> {
@@ -98,8 +98,8 @@ forja add orm --driver=json-driver --example
 
 Either way, `forja add <preset>` never runs a blanket `npm install` — it installs
 *exactly* the packages it just added to your `package.json` (`@forjajs/orm`,
-`@forjajs/core`, and the chosen driver package), nothing else in your project gets
-touched.
+`@forjajs/contracts`, and the chosen driver package), nothing else in your project
+gets touched.
 
 Both entry points — `forja new`'s inline prompt and the standalone `forja add orm`
 — go through the exact same code path internally, so behavior never drifts between
@@ -126,18 +126,19 @@ Plus, in your project's `package.json`:
 {
   "dependencies": {
     "@forjajs/orm": "*",
-    "@forjajs/core": "*",
+    "@forjajs/contracts": "*",
     "@forjajs/json-driver": "*"
   }
 }
 ```
 
-`@forjajs/core` is there because it's a `peerDependency` of `@forjajs/orm` — every
-addon's template code `require()`s `@forjajs/core` directly (for the `Repository`
-contract type, `assertImplements`, etc.), so the CLI always adds peer dependencies
-alongside the addon itself. `@forjajs/json-driver` is there because *you* chose it
-as your driver — swap `--driver` for a future driver and this line changes, the
-first two never do.
+`@forjajs/contracts` is there because it's a `peerDependency` of `@forjajs/orm` —
+it's the zero-dependency package that owns the `Repository` contract type and
+`assertImplements`, shared by every addon (HTTP-based or not) without pulling in
+`@forjajs/core`'s Express-specific registry too. The CLI always adds peer
+dependencies alongside the addon itself. `@forjajs/json-driver` is there because
+*you* chose it as your driver — swap `--driver` for a future driver and this line
+changes, the first two never do.
 
 ## 1.3 The generated driver adapter
 
@@ -523,9 +524,9 @@ deterministic-valued, fixtures for integration tests.
 
 Everything below works in **any** Node.js project — a plain Express app, a CLI
 tool, a background worker, nothing Forja-flavored required. `@forjajs/orm` has no
-runtime dependency on the rest of the Forja ecosystem beyond `@forjajs/core`
-(for the `Repository` contract type and `assertImplements` — a tiny, standalone
-package itself, no framework baggage).
+runtime dependency on the rest of the Forja ecosystem beyond `@forjajs/contracts`
+(for the `Repository` contract type and `assertImplements` — a genuinely tiny,
+zero-dependency package, not `@forjajs/core`: no Express, no HTTP anything).
 
 ## 2.1 Install
 
@@ -757,7 +758,7 @@ The entire surface a driver adapter needs to satisfy is the `Repository<T>`
 contract — five methods, four of which can usually be trivial wrappers:
 
 ```js
-const { contracts } = require("@forjajs/core");
+const contracts = require("@forjajs/contracts");
 
 async function createMyDriverRepository(connectionString) {
   const client = await myDriverLibrary.connect(connectionString);

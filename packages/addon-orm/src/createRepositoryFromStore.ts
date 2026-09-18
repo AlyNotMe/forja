@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { contracts } from "@forjajs/core";
+import * as contracts from "@forjajs/contracts";
 import { HyperLogLog } from "./hyperLogLog";
 import { matchesCriteria, type QueryCriteria } from "./query";
 
