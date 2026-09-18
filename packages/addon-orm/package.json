@@ -7,9 +7,55 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -b",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test": "vitest run",
+    "test:services:up": "docker compose -f docker-compose.test.yml up -d --wait && docker compose -f docker-compose.test.yml exec -T orm-test-mongodb mongosh --quiet --eval \"try { rs.status() } catch (e) { rs.initiate({ _id: 'rs0', members: [{ _id: 0, host: '127.0.0.1:27017' }] }) }\"",
+    "test:services:down": "docker compose -f docker-compose.test.yml down -v"
   },
   "peerDependencies": {
     "@forjajs/core": "*"
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "forjaDrivers": {
+    "json-driver": {
+      "template": "orm.@forjajs-json-driver-repository.js",
+      "package": "@forjajs/json-driver",
+      "extension": ".json-driver",
+      "kind": "filesystem"
+    },
+    "sqlite": {
+      "template": "orm.sqlite-repository.js",
+      "package": "better-sqlite3",
+      "extension": ".sqlite3",
+      "kind": "filesystem"
+    },
+    "mysql": {
+      "template": "orm.mysql-repository.js",
+      "package": "mysql2",
+      "kind": "network"
+    },
+    "postgres": {
+      "template": "orm.postgres-repository.js",
+      "package": "pg",
+      "kind": "network"
+    },
+    "mongodb": {
+      "template": "orm.mongodb-repository.js",
+      "package": "mongodb",
+      "kind": "network"
+    }
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "vitest": "^2",
+    "better-sqlite3": "^11",
+    "mysql2": "^3",
+    "pg": "^8",
+    "mongodb": "^6",
+    "@types/better-sqlite3": "^7",
+    "@types/pg": "^8"
   }
 }
